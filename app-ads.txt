@@ -145,3 +145,8 @@ onetag.com, 5d1628750185ace, RESELLER
 thunder-monetize.com, 5257091605, RESELLER
 conversantmedia.com, 100863, RESELLER, 03113cd04947736d
 zetaglobal.net, 815, RESELLER
+video.unrulymedia.com, 585054906, RESELLER
+bid-matrix.com, f2c71a45ea149366, RESELLER
+video.unrulymedia.com, 755432070, RESELLER
+prado.co, 14260, RESELLER
+pubmatic.com, 165438, RESELLER, 5d62403b186f2ace
