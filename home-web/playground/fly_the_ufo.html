@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="uploads/ArunDeepLogo.png">
+    <title>ArunDeep - Fly the UFO</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #0d0302;
+            flex-direction: column; /* Stack elements vertically */
+            font-family: sans-serif;
+        }
+        canvas {
+            /*border: 1px solid black;*/
+            /*background-color: #87CEEB; /* Sky blue background */*/
+            display: block; /* Prevent extra space below canvas */
+        }
+        #ui-container {
+            position: relative; /* Needed for absolute positioning of children */
+            width: 600px; /* Match canvas width */
+            margin-top: 10px; /* Space above UI */
+        }
+        #score {
+            position: absolute;
+            top: 0;
+            left: 10px;
+            font-size: 24px;
+            color: #f0eded;
+        }
+         #instructions {
+            position: absolute;
+            top: 0;
+            right: 10px;
+            font-size: 16px;
+            color: #f0eded;
+         }
+        #gameOverMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 36px;
+            color: red;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none; /* Hidden by default */
+            z-index: 10; /* Ensure it's on top */
+        }
+    </style>
+</head>
+<body>
+    <table align="">
+        <td><a href="../index.html"><img src="uploads/ArunDeepLogo.png", height="100"></a>
+    </td>
+        <td><a href="https://play.google.com/store/apps/dev?id=8575568315140922409" target="_blank"><img src="uploads/google_icon.png", height="50"></a></td>
+    </table>
+    <canvas id="gameCanvas" width="600" height="400"></canvas>
+    <div id="ui-container">
+        <div id="score">Score: 0</div>
+        <div id="instructions">Press SPACE to Fly</div>
+        <div id="gameOverMessage">
+            Game Over!<br>
+            <span id="finalScore"></span><br>
+            Click to Restart
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const gameOverMessage = document.getElementById('gameOverMessage');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        var background = new Image();
+        background.src = "uploads/sky.jpg";
+        var player_icon = new Image();
+        player_icon.src = "uploads/ufo.png";
+        // ctx.drawImage(background,10,10);
+
+        // --- Game Settings ---
+        const GRAVITY = 0.2;
+        const LIFT = -5; // Negative value for upward force
+        const OBSTACLE_SPEED = 2;
+        const OBSTACLE_WIDTH = 60;
+        const OBSTACLE_GAP = 120; // Vertical gap between top and bottom obstacles
+        const OBSTACLE_INTERVAL = 150; // Frames between new obstacles spawning
+
+        // --- Game State ---
+        let player;
+        let obstacles = [];
+        let frameCount = 0;
+        let score = 0;
+        let isGameOver = false;
+        let gameStarted = false; // Start paused
+
+        // --- Player Object ---
+        function Player(x, y, width, height, color) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.color = color;
+            this.velocityY = 0;
+            
+
+            
+
+
+            this.draw = function() {
+                ctx.drawImage(player_icon,this.x,this.y, this.width, this.height);
+                // ctx.fillStyle = this.color;
+                // ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+
+            this.update = function() {
+                this.velocityY += GRAVITY;
+                this.y += this.velocityY;
+
+                // Prevent going off top/bottom screen
+                if (this.y + this.height > canvas.height) {
+                    this.y = canvas.height - this.height;
+                    this.velocityY = 0;
+                    gameOver(); // Hit the ground
+                }
+                if (this.y < 0) {
+                    this.y = 0;
+                    this.velocityY = 0;
+                    // Optional: gameOver(); if hitting the ceiling ends the game
+                }
+            }
+
+            this.fly = function() {
+                this.velocityY = LIFT;
+            }
+        }
+
+        // --- Obstacle Functions ---
+        function createObstacle() {
+            const gapTop = Math.random() * (canvas.height - OBSTACLE_GAP - 40) + 20; // 20px padding top/bottom
+            const topHeight = gapTop;
+            const bottomHeight = canvas.height - (gapTop + OBSTACLE_GAP);
+
+            // Top obstacle (skyscraper part)
+            obstacles.push({
+                x: canvas.width,
+                y: 0,
+                width: OBSTACLE_WIDTH,
+                height: topHeight,
+                color: '#000000', // Dark grey
+                passed: false
+            });
+
+            // Bottom obstacle (skyscraper part)
+            obstacles.push({
+                x: canvas.width,
+                y: gapTop + OBSTACLE_GAP,
+                width: OBSTACLE_WIDTH,
+                height: bottomHeight,
+                color: '#000000',
+                passed: false // Only need to track score on one part (e.g., bottom)
+            });
+        }
+
+        function updateObstacles() {
+            // Spawn new obstacles
+            if (frameCount % OBSTACLE_INTERVAL === 0) {
+                createObstacle();
+            }
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                obs.x -= OBSTACLE_SPEED;
+
+                // Draw obstacle
+                ctx.fillStyle = obs.color;
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+
+                 // Add simple window details
+                ctx.fillStyle = '#fcd200'; // windows color
+                const windowSize = 8;
+                const gapX = 10;
+                const gapY = 15;
+                for (let row = obs.y + gapY; row < obs.y + obs.height - windowSize; row += windowSize + gapY) {
+                    for (let col = obs.x + gapX; col < obs.x + obs.width - windowSize; col += windowSize + gapX) {
+                         // Only draw if fully within bounds (prevents partial windows at edges)
+                        if (row > obs.y && row + windowSize < obs.y + obs.height &&
+                            col > obs.x && col + windowSize < obs.x + obs.width) {
+                            ctx.fillRect(col, row, windowSize, windowSize);
+                        }
+                    }
+                }
+
+
+                // Collision detection
+                if (
+                    player.x < obs.x + obs.width &&
+                    player.x + player.width > obs.x &&
+                    player.y < obs.y + obs.height &&
+                    player.y + player.height > obs.y
+                ) {
+                    gameOver();
+                }
+
+                // Score increment (check only one of the pair, e.g., the bottom one)
+                 // Check if the obstacle's back edge has passed the player's front edge
+                 // And ensure we only score once per obstacle pair
+                if (!obs.passed && obs.x + obs.width < player.x) {
+                    // We check every *other* obstacle because they come in pairs
+                    // Check if this is the top or bottom part of the pair that hasn't been counted
+                    const pairIndex = (obstacles.indexOf(obs) % 2 === 0) ? obstacles.indexOf(obs) + 1 : obstacles.indexOf(obs) - 1;
+                    if (pairIndex >= 0 && pairIndex < obstacles.length && !obstacles[pairIndex].passed) {
+                         score++;
+                         scoreDisplay.textContent = `Score: ${score}`;
+                         obs.passed = true;
+                         obstacles[pairIndex].passed = true; // Mark both parts as passed
+                    } else if (pairIndex < 0 || pairIndex >= obstacles.length){
+                        // Handle edge case if one part got removed early somehow
+                        score++;
+                        scoreDisplay.textContent = `Score: ${score}`;
+                        obs.passed = true;
+                    }
+                }
+
+
+                // Remove obstacles that are off-screen
+                if (obs.x + obs.width < 0) {
+                    obstacles.splice(i, 1);
+                }
+            }
+        }
+
+        // --- Game Control ---
+        function gameOver() {
+            if (!isGameOver) { // Prevent multiple calls
+                isGameOver = true;
+                finalScoreDisplay.textContent = `Final Score: ${score}`;
+                gameOverMessage.style.display = 'block';
+                gameStarted = false; // Stop the loop implicitly by not requesting next frame
+            }
+        }
+
+        function resetGame() {
+            player = new Player(50, canvas.height / 2 - 15, 30, 30, '#FFD700'); // Gold color
+            obstacles = [];
+            frameCount = 0;
+            score = 0;
+            isGameOver = false;
+            gameStarted = false; // Reset start flag
+            scoreDisplay.textContent = `Score: ${score}`;
+            gameOverMessage.style.display = 'none';
+             // Restart the loop if needed, or wait for input
+             // For this setup, we wait for space press again
+        }
+
+        function gameLoop() {
+            if (isGameOver || !gameStarted) {
+                 // If waiting to start, show initial instructions
+                 if (!gameStarted && !isGameOver) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.font = "30px Arial";
+                    ctx.fillStyle = "white";
+                    ctx.textAlign = "center";
+                    ctx.fillText("Press SPACE to Start Flying!", canvas.width/2, canvas.height/2);
+                 }
+                 // Don't continue the loop if paused or game over
+                return;
+            }
+
+            // 1. Clear Canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.drawImage(background,10,10);
+
+            // 2. Update Game Objects
+            player.update();
+            updateObstacles();
+
+            // 3. Draw Game Objects
+            player.draw();
+            // Obstacles are drawn in updateObstacles
+
+            // 4. Increment frame count
+            frameCount++;
+
+            // 5. Request Next Frame
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- Event Listeners ---
+        document.addEventListener('keydown', function(e) {
+            if (e.code === 'Space') {
+                 if (!gameStarted && !isGameOver) {
+                    gameStarted = true; // Start the game
+                    resetGame(); // Ensure clean state on first start
+                    gameStarted = true; // Set again after reset
+                    requestAnimationFrame(gameLoop); // Kick off the loop
+                }
+                 if (gameStarted && !isGameOver) {
+                    player.fly();
+                 }
+            }
+        });
+
+        // Restart listener
+        canvas.addEventListener('click', function(e) {
+             // Only restart if game is over and the click is roughly on the message
+             // A simpler check: just restart if game is over
+             if (isGameOver) {
+                 resetGame();
+                  // No need to start loop here, wait for SPACE again
+             }
+        });
+         gameOverMessage.addEventListener('click', function(e) {
+             // Also allow clicking the message itself
+             if (isGameOver) {
+                 resetGame();
+             }
+         });
+
+
+        // --- Initial Setup ---
+        resetGame(); // Set up initial player state
+        requestAnimationFrame(gameLoop); // Start the loop (it will pause until space is pressed)
+
+    </script>
+</body>
+</html>
