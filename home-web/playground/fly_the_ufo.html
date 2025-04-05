@@ -64,7 +64,7 @@
         <td><a href="https://play.google.com/store/apps/dev?id=8575568315140922409" target="_blank"><img src="uploads/google_icon.png", height="50"></a></td>
         </tr>
         <tr>
-            <td><img src="uploads/ufo_logo.png" width="300" id="ufo_logo"></img></td>
+            <td><center><img src="uploads/ufo_logo.png" width="300" id="ufo_logo"></img></center></td>
         </tr>
     </table>
     <canvas id="gameCanvas" width="600" height="400"></canvas>
@@ -283,9 +283,7 @@
                  }
                  // Don't continue the loop if paused or game over
                 return;
-            }
-
-            invertLogo();
+            }            
 
             // 1. Clear Canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -340,6 +338,7 @@
 
 
         // --- Initial Setup ---
+        invertLogo();
         resetGame(); // Set up initial player state
         requestAnimationFrame(gameLoop); // Start the loop (it will pause until space is pressed)
 
