@@ -172,3 +172,4 @@ inmobi.com, b01aa06531c543d8a5fb9982f60afb00, RESELLER, 83e75a7ae333ca9d
 lijit.com, 546566, RESELLER, fafdf38b16bf6b2b
 castify.ai, 1295184, RESELLER
 improvedigital.com, 2525, RESELLER
+improvedigital.com, 1664, RESELLER
