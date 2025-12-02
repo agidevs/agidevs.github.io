@@ -1,0 +1,13 @@
+#EXTM3U
+#EXT-X-VERSION:3
+
+# Define the Audio-Only stream
+#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio_group_1",NAME="English Audio",DEFAULT=YES,URI="https://server.thelegitpro.in/northeastlive/northeastlive/tracks-a1/index.fmp4.m3u8"
+
+# Define the Video-Only stream and link it to the audio group
+#EXT-X-STREAM-INF:BANDWIDTH=2000000,RESOLUTION=1280x720,CODECS="avc1.42c00a",AUDIO="audio_group_1" 
+https://server.thelegitpro.in/northeastlive/northeastlive/tracks-v1/index.fmp4.m3u8
+
+(* # You can add more video resolutions linked to the same audio group
+#EXT-X-STREAM-INF:BANDWIDTH=1000000,RESOLUTION=640x360,CODECS="avc1.42c00a",AUDIO="audio_group_1"
+https://example.com/video/video_only_360p.m3u8 *)
